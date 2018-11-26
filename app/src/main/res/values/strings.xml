@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">GunfireLocator Streamer</string>
+    <string name="connection">Conexão</string>
+    <string name="status">Status</string>
+    <string name="connect">Conectar</string>
+    <string name="disconnect">Desconectar</string>
+    <string name="time">Tempo</string>
+    <string name="n_seconds">%1$s</string>
+    <string name="ip_address">Endereço IP</string>
+    <string name="port">Porta</string>
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
 </resources>
