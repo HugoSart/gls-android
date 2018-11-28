@@ -1,4 +1,4 @@
-package com.hugovs.gunfirelocatorstreamer;
+package com.hugovs.gls;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

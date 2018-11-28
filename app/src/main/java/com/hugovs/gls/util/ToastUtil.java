@@ -1,4 +1,4 @@
-package com.hugovs.gunfirelocatorstreamer.util;
+package com.hugovs.gls.util;
 
 import android.app.Activity;
 import android.widget.Toast;

@@ -1,4 +1,4 @@
-package com.hugovs.gunfirelocatorstreamer;
+package com.hugovs.gls;
 
 import org.junit.Test;
 
