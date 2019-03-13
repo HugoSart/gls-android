@@ -8,8 +8,12 @@ import android.util.Log;
 import com.hugovs.gls.util.asynctask.AsyncTaskListener;
 import com.hugovs.gls.util.asynctask.ObservableAsyncTask;
 
+import java.io.IOException;
 import java.net.InetAddress;
 
+/**
+ * This class implements the Facade pattern for the streamer construction.
+ */
 public class AudioStreamerClient {
 
     private AudioStreamingTask task;
@@ -40,17 +44,26 @@ public class AudioStreamerClient {
         Log.d("GLS", "Minimum buffer size: " + minBufSize);
     }
 
+    /**
+     * Set the default listener.
+     * @param listener the listener to serve as callback.
+     */
     public void setListener(AsyncTaskListener<Void, Void, Void> listener) {
         this.listener = listener;
     }
 
-    public void startAudioStreaming(final InetAddress ipAddress, final int port) {
+    /**
+     * Starts the audio streaming remotely.
+     * @param ipAddress the remote address.
+     * @param port the remote port.
+     */
+    public void start(final InetAddress ipAddress, final int port) throws IOException {
 
         if (port < 0 || port > 65535) throw new AssertionError("Invalid port");
         Log.d("GLS", "Starting GLS Android Client ...");
 
-        audioRecorder = new AudioRecorder(MediaRecorder.AudioSource.MIC, sampleRate, channelConfig, audioFormat, minBufSize, 128000);
-        audioStreamer = new AudioStreamer(audioRecorder.getRecords(), ipAddress, port);
+        audioRecorder = new AudioRecorder(MediaRecorder.AudioSource.MIC, sampleRate, channelConfig, audioFormat, minBufSize);
+        audioStreamer = new AudioStreamer(audioRecorder.getInputStream(), ipAddress, port, minBufSize);
 
         task = new AudioStreamingTask(audioRecorder, audioStreamer);
         if (listener != null) task.setListener(listener);
@@ -60,18 +73,35 @@ public class AudioStreamerClient {
 
     }
 
-    public void stopAudioStreaming() {
+    /**
+     * Stops the audio streaming.
+     */
+    public void stop() {
         task.cancel(false);
     }
 
+    /**
+     * Checks if this client is recording audio.
+     * @return  {@code true} if this client is recording audio;
+     *          {@code false} if not.
+     */
     public boolean isRecording() {
         return audioRecorder != null && audioRecorder.isRecording();
     }
 
+    /**
+     * Checks if this client is streaming the samples.
+     * @return  {@code true} if this client is streaming the samples;
+     *          {@code false} if not.
+     */
     public boolean isStreaming(){
         return audioStreamer != null && audioStreamer.isStreaming();
     }
 
+    /**
+     * This task is intended to effectively start the recorder and the streamer without blocking
+     * the main UI thread.
+     */
     private static class AudioStreamingTask extends ObservableAsyncTask<Void, Void, Void> {
 
         private final AudioRecorder recorder;
@@ -92,7 +122,6 @@ public class AudioStreamerClient {
 
             streamer.stopStreaming();
             recorder.stopRecording();
-            onPostExecute(null);
             return null;
         }
 

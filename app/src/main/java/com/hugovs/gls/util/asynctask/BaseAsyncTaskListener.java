@@ -1,5 +1,8 @@
 package com.hugovs.gls.util.asynctask;
 
+/**
+ * A simple {@link AsyncTaskListener} with dummy implementations.
+ */
 public class BaseAsyncTaskListener<Params, Progress, Result> implements AsyncTaskListener<Params, Progress, Result> {
 
     @Override

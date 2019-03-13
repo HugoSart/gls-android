@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GunfireLocator Streamer</string>
+    <string name="app_name">GLS-Android</string>
     <string name="connection">Conexão</string>
     <string name="status">Status</string>
     <string name="connect">Conectar</string>

@@ -2,6 +2,9 @@ package com.hugovs.gls.util.asynctask;
 
 import android.os.AsyncTask;
 
+/**
+ * An {@link ObservableAsyncTask} is an {@link AsyncTask} that implements the observer pattern.
+ */
 public abstract class ObservableAsyncTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result> {
 
     protected AsyncTaskListener<Params, Progress, Result> listener;

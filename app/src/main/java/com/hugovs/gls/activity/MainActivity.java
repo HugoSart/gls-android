@@ -5,16 +5,14 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import com.hugovs.gls.R;
 import com.hugovs.gls.streamer.AudioStreamerClient;
 import com.hugovs.gls.util.asynctask.BaseAsyncTaskListener;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -55,7 +53,7 @@ public class MainActivity extends Activity {
     }
 
     private void setupAudioStreamerClient() {
-        streamer = new AudioStreamerClient(44100);
+        streamer = new AudioStreamerClient(16000);
         streamer.setListener(new BaseAsyncTaskListener<Void, Void, Void>() {
 
             @Override
@@ -80,12 +78,15 @@ public class MainActivity extends Activity {
         btConnect.setOnClickListener(v -> {
             if (!streamer.isStreaming()) {
                 try {
-                    streamer.startAudioStreaming(InetAddress.getByName(etIP.getText().toString()), Integer.valueOf(etPort.getText().toString()));
-                } catch (UnknownHostException e) {
+                    streamer.start(InetAddress.getByName(etIP.getText().toString()), Integer.valueOf(etPort.getText().toString()));
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-            else streamer.stopAudioStreaming();
+            else {
+                streamer.stop();
+                setupConnectionViews(false);
+            }
         });
 
     }
