@@ -6,38 +6,28 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * This class records the audio from the main device's audio input.
  * The samples are written to the {@link OutputStream} and can be obtained in the {@link InputStream}.
- *
- * @apiNote
- * Use the {@linkplain #getInputStream()} method to read the samples in real-time.
  */
-class AudioRecorder {
+public class AudioRecorder {
 
     // Properties
     private final int minBuffSize;
-
-    // Streams
-    private final PipedOutputStream outputStream;
-    private final PipedInputStream inputStream;
 
     // References
     private AudioRecordThread task;
     private AudioRecord record;
 
+    private final Collection<Listener> listeners = new ArrayList<>();
+
     public AudioRecorder(int audioSource, int sampleRateInHz, int channelConfig, int audioFormat,
-                         int bufferSizeInBytes) throws IllegalArgumentException, IOException {
+                         int bufferSizeInBytes) throws IllegalArgumentException {
         // Set constants
         this.minBuffSize = bufferSizeInBytes;
-
-        // Initialize Streams
-        this.outputStream = new PipedOutputStream();
-        this.inputStream = new PipedInputStream();
-        outputStream.connect(inputStream);
 
         // Initialize record
         this.record = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes * 10);
@@ -50,7 +40,8 @@ class AudioRecorder {
     public void startRecording() {
         Log.d("GLS", "Starting audio recorder ...");
         record.startRecording();
-        task = new AudioRecordThread(record, outputStream, minBuffSize);
+        task = new AudioRecordThread(record);
+        task.listeners = listeners;
         task.start();
         Log.d("GLS","Audio recorder started!");
     }
@@ -73,11 +64,26 @@ class AudioRecorder {
     }
 
     /**
-     * Returns the audio samples {@link InputStream}.
-     * @return the audio samples {@link InputStream}.
+     * Add the specified {@link Listener} to the listeners.
+     * @param listener the {@link Listener} to be added.
      */
-    public InputStream getInputStream() {
-        return inputStream;
+    public void addListener(Listener listener) {
+        listeners.add(listener);
+    }
+
+    /**
+     * Remove the specified {@link Listener} from the listeners.
+     * @param listener the {@link Listener} to be removed.
+     */
+    public void removeListener(Listener listener) {
+        listeners.remove(listener);
+    }
+
+    /**
+     * Listener interface to act as callback on record data.
+     */
+    public interface Listener {
+        void onDataReceived(byte[] data);
     }
 
     /**
@@ -86,13 +92,18 @@ class AudioRecorder {
     private static class AudioRecordThread extends Thread {
 
         private AudioRecord record;
-        private OutputStream outputStream;
-        private int minBuffSize;
+        private Collection<Listener> listeners = new ArrayList<>();
 
-        AudioRecordThread(AudioRecord record, OutputStream outputStream, int minBuffSize) {
+        AudioRecordThread(AudioRecord record) {
             this.record = record;
-            this.outputStream = outputStream;
-            this.minBuffSize = minBuffSize;
+        }
+
+        public void addListener(Listener listener) {
+            listeners.add(listener);
+        }
+
+        public void removeListener(Listener listener) {
+            listeners.remove(listener);
         }
 
         @Override
@@ -100,14 +111,11 @@ class AudioRecorder {
 
             // Records and write to the buffer until the thread be interrupted.
             while (!isInterrupted() && record.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-                byte[] b = new byte[1028];
+                byte[] b = new byte[1280];
                 record.read(b, 0, b.length);
 
-                try {
-                    outputStream.write(b);
-                } catch (IOException e) {
-                    Log.e("GLS", "Failed to write to output stream");
-                }
+                for (Listener listener : listeners)
+                    listener.onDataReceived(b);
 
             }
 

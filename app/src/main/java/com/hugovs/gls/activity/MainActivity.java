@@ -76,7 +76,7 @@ public class MainActivity extends Activity {
         });
 
         btConnect.setOnClickListener(v -> {
-            if (!streamer.isStreaming()) {
+            if (!streamer.isRecording()) {
                 try {
                     streamer.start(InetAddress.getByName(etIP.getText().toString()), Integer.valueOf(etPort.getText().toString()));
                 } catch (IOException e) {

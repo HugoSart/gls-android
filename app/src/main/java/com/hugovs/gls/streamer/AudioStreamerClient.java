@@ -5,6 +5,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
+import com.hugovs.gls.streamer.listener.DataStreamer;
 import com.hugovs.gls.util.asynctask.AsyncTaskListener;
 import com.hugovs.gls.util.asynctask.ObservableAsyncTask;
 
@@ -18,7 +19,7 @@ public class AudioStreamerClient {
 
     private AudioStreamingTask task;
     private AudioRecorder audioRecorder;
-    private AudioStreamer audioStreamer;
+    private DataStreamer streamer;
 
     private AsyncTaskListener<Void, Void, Void> listener;
 
@@ -62,10 +63,11 @@ public class AudioStreamerClient {
         if (port < 0 || port > 65535) throw new AssertionError("Invalid port");
         Log.d("GLS", "Starting GLS Android Client ...");
 
+        // Create AudioRecorder and its listeners
         audioRecorder = new AudioRecorder(MediaRecorder.AudioSource.MIC, sampleRate, channelConfig, audioFormat, minBufSize);
-        audioStreamer = new AudioStreamer(audioRecorder.getInputStream(), ipAddress, port, minBufSize);
+        audioRecorder.addListener(new DataStreamer(ipAddress, port));
 
-        task = new AudioStreamingTask(audioRecorder, audioStreamer);
+        task = new AudioStreamingTask(audioRecorder);
         if (listener != null) task.setListener(listener);
         task.execute();
 
@@ -90,38 +92,26 @@ public class AudioStreamerClient {
     }
 
     /**
-     * Checks if this client is streaming the samples.
-     * @return  {@code true} if this client is streaming the samples;
-     *          {@code false} if not.
-     */
-    public boolean isStreaming(){
-        return audioStreamer != null && audioStreamer.isStreaming();
-    }
-
-    /**
      * This task is intended to effectively start the recorder and the streamer without blocking
      * the main UI thread.
      */
     private static class AudioStreamingTask extends ObservableAsyncTask<Void, Void, Void> {
 
         private final AudioRecorder recorder;
-        private final AudioStreamer streamer;
 
-        AudioStreamingTask(AudioRecorder recorder, AudioStreamer streamer) {
+        AudioStreamingTask(AudioRecorder recorder) {
             this.recorder = recorder;
-            this.streamer = streamer;
         }
 
         @Override
         protected Void doInBackground(Void... voids) {
 
+            // Recorder LifeCycle
             recorder.startRecording();
             while (!recorder.isRecording());
-            streamer.startStreaming();
-            while (!isCancelled() && streamer.isStreaming());
-
-            streamer.stopStreaming();
+            while (!isCancelled());
             recorder.stopRecording();
+
             return null;
         }
 
