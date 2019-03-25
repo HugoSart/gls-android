@@ -4,6 +4,8 @@ import android.os.AsyncTask;
 
 /**
  * An {@link ObservableAsyncTask} is an {@link AsyncTask} that implements the observer pattern.
+ *
+ * @author Hugo Sartori
  */
 public abstract class ObservableAsyncTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result> {
 

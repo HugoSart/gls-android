@@ -2,6 +2,7 @@ package com.hugovs.gls.activity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,14 +21,16 @@ public class MainActivity extends Activity {
 
     // Views
     private Button btConnect;
-    private EditText etIP, etPort;
+    private EditText etIP, etPort, etSampleRate;
 
     private AudioStreamerClient streamer;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sharedPreferences = getSharedPreferences("GLS-Android", MODE_PRIVATE);
 
         // Custom code
         checkPermissions();
@@ -50,10 +53,14 @@ public class MainActivity extends Activity {
         btConnect = findViewById(R.id.btConnect);
         etIP = findViewById(R.id.etIP);
         etPort = findViewById(R.id.etPort);
+        etSampleRate = findViewById(R.id.etSampleRate);
+        etIP.setText(sharedPreferences.getString("ip", "192.168.0.8"));
+        etPort.setText(sharedPreferences.getString("port", "55555"));
+        etSampleRate.setText(sharedPreferences.getString("sample_rate", "16000"));
     }
 
     private void setupAudioStreamerClient() {
-        streamer = new AudioStreamerClient(16000);
+        streamer = new AudioStreamerClient(Integer.valueOf(etSampleRate.getText().toString()));
         streamer.setListener(new BaseAsyncTaskListener<Void, Void, Void>() {
 
             @Override
@@ -64,20 +71,26 @@ public class MainActivity extends Activity {
             @Override
             public void onPostExecute(Void o) {
                 setupConnectionViews(false);
-                Log.d("GLS", "foi");
             }
 
             @Override
             public void onCancelled() {
                 setupConnectionViews(false);
-                Log.d("GLS", "foi");
             }
 
         });
 
         btConnect.setOnClickListener(v -> {
+            if (sharedPreferences != null)
+                sharedPreferences.edit()
+                        .putString("ip", etIP.getText().toString())
+                        .putString("port", etPort.getText().toString())
+                        .putString("sample_rate", etSampleRate.getText().toString())
+                        .apply();
+
             if (!streamer.isRecording()) {
                 try {
+                    streamer.setSampleRate(Integer.valueOf(etSampleRate.getText().toString()));
                     streamer.start(InetAddress.getByName(etIP.getText().toString()), Integer.valueOf(etPort.getText().toString()));
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -94,6 +107,7 @@ public class MainActivity extends Activity {
     private void setupConnectionViews(boolean connected) {
         etIP.setEnabled(!connected);
         etPort.setEnabled(!connected);
+        etSampleRate.setEnabled(!connected);
         btConnect.setText(connected ? getString(R.string.disconnect) : getString(R.string.connect));
     }
 

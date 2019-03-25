@@ -19,15 +19,17 @@ public class AudioStreamerClient {
 
     private AudioStreamingTask task;
     private AudioRecorder audioRecorder;
-    private DataStreamer streamer;
 
     private AsyncTaskListener<Void, Void, Void> listener;
 
     // Audio properties
     private int minBufSize;
-    private final int sampleRate;
+    private int sampleRate;
     private final int channelConfig;
     private final int audioFormat;
+
+    // Other properties
+    private long id;
 
     public AudioStreamerClient() {
         this(16000);
@@ -42,7 +44,14 @@ public class AudioStreamerClient {
         this.channelConfig = channelConfig;
         this.audioFormat = audioFormat;
         this.minBufSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
-        Log.d("GLS", "Minimum buffer size: " + minBufSize);
+    }
+
+    public void setSampleRate(int sampleRate) {
+        this.sampleRate = sampleRate;
+    }
+
+    public int getSampleRate() {
+        return sampleRate;
     }
 
     /**
@@ -59,6 +68,11 @@ public class AudioStreamerClient {
      * @param port the remote port.
      */
     public void start(final InetAddress ipAddress, final int port) throws IOException {
+
+        Log.d("GLS", "Minimum buffer size: " + minBufSize);
+        Log.d("GLS", "Audio format: " + audioFormat);
+        Log.d("GLS", "Channel config: " + channelConfig);
+        Log.d("GLS", "Sample rate: " + sampleRate);
 
         if (port < 0 || port > 65535) throw new AssertionError("Invalid port");
         Log.d("GLS", "Starting GLS Android Client ...");
@@ -89,6 +103,14 @@ public class AudioStreamerClient {
      */
     public boolean isRecording() {
         return audioRecorder != null && audioRecorder.isRecording();
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public long getId() {
+        return id;
     }
 
     /**

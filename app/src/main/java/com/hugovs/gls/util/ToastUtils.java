@@ -5,15 +5,18 @@ import android.widget.Toast;
 
 /**
  * Class that encapsulates the utilities for toast creation.
+ *
+ * @author Hugo Sartori
  */
-public class ToastUtil {
+public class ToastUtils {
 
-    private ToastUtil() {
+    private ToastUtils() {
         //no instance
     }
 
     /**
      * Show a toast.
+     *
      * @param activity the activity to be served as context.
      * @param toast the toast text.
      * @param length the toast duration.

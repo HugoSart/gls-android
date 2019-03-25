@@ -1,6 +1,13 @@
 package com.hugovs.gls.util;
 
+/**
+ * String utilities.
+ *
+ * @author Hugo Sartori
+ */
 public class StringUtils {
+
+    private static final String HEXES = "0123456789ABCDEF";
 
     private StringUtils() {
         //no instance
@@ -8,6 +15,7 @@ public class StringUtils {
 
     /**
      * Converts a byte array into a hexadecimal string format.
+     *
      * @param byteArray the byte array to be converted to string.
      * @return the string of the byte array on hex format
      */
@@ -24,7 +32,12 @@ public class StringUtils {
         return prt.toString();
     }
 
-    static final String HEXES = "0123456789ABCDEF";
+    /**
+     * Get a hexadecimal {@link String} representation of a {@code byte} array.
+     *
+     * @param raw the {@code byte} array to be converted to a {@link String}.
+     * @return the hexadecimal {@link String}.
+     */
     private static String getHex( byte [] raw ) {
         if ( raw == null ) {
             return null;

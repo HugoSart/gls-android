@@ -2,6 +2,8 @@ package com.hugovs.gls.util.asynctask;
 
 /**
  * A simple {@link AsyncTaskListener} with dummy implementations.
+ *
+ * @author Hugo Sartori
  */
 public class BaseAsyncTaskListener<Params, Progress, Result> implements AsyncTaskListener<Params, Progress, Result> {
 

@@ -3,10 +3,13 @@ package com.hugovs.gls.streamer;
 import android.media.AudioRecord;
 import android.util.Log;
 
-import java.io.IOException;
+import com.hugovs.gls.util.ByteUtils;
+import com.hugovs.gls.util.StringUtils;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 
 /**
@@ -32,6 +35,10 @@ public class AudioRecorder {
         // Initialize record
         this.record = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes * 10);
 
+        // Debug
+        Log.d("GLS", "Channel count: " + record.getChannelCount());
+        Log.d("GLS", "Format: " + record.getFormat().toString());
+
     }
 
     /**
@@ -40,7 +47,7 @@ public class AudioRecorder {
     public void startRecording() {
         Log.d("GLS", "Starting audio recorder ...");
         record.startRecording();
-        task = new AudioRecordThread(record);
+        task = new AudioRecordThread(record, minBuffSize);
         task.listeners = listeners;
         task.start();
         Log.d("GLS","Audio recorder started!");
@@ -91,11 +98,13 @@ public class AudioRecorder {
      */
     private static class AudioRecordThread extends Thread {
 
-        private AudioRecord record;
+        private final AudioRecord record;
         private Collection<Listener> listeners = new ArrayList<>();
+        private final int minBuffSize;
 
-        AudioRecordThread(AudioRecord record) {
+        AudioRecordThread(AudioRecord record, int minBuffSize) {
             this.record = record;
+            this.minBuffSize = minBuffSize;
         }
 
         public void addListener(Listener listener) {
@@ -111,8 +120,12 @@ public class AudioRecorder {
 
             // Records and write to the buffer until the thread be interrupted.
             while (!isInterrupted() && record.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-                byte[] b = new byte[1280];
-                record.read(b, 0, b.length);
+                byte[] b = new byte[minBuffSize + 16];
+                record.read(b, 16, b.length - 16);
+
+                long timestamp = Calendar.getInstance().getTimeInMillis();
+                byte[] timestampBytes = ByteUtils.longToBytes(timestamp);
+                System.arraycopy(timestampBytes, 0, b, 8, 8);
 
                 for (Listener listener : listeners)
                     listener.onDataReceived(b);
