@@ -10,20 +10,25 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.hugovs.gls.R;
-import com.hugovs.gls.streamer.AudioStreamerClient;
-import com.hugovs.gls.util.asynctask.BaseAsyncTaskListener;
+import com.hugovs.gls.core.AudioServer;
+import com.hugovs.gls.streamer.AudioServerFactory;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+/**
+ * GLS Android App main activity.
+ *
+ * @author Hugo Sartori
+ */
 public class MainActivity extends Activity {
 
     // Views
     private Button btConnect;
     private EditText etIP, etPort, etSampleRate;
 
-    private AudioStreamerClient streamer;
+    // References
+    private AudioServer audioServer;
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -35,10 +40,58 @@ public class MainActivity extends Activity {
         // Custom code
         checkPermissions();
         initViews();
-        setupAudioStreamerClient();
+        setupConnectButton();
 
     }
 
+    /**
+     * Setup the connect button to create or destroy the audio server.
+     */
+    private void setupConnectButton() {
+        btConnect.setOnClickListener(v -> {
+            if (sharedPreferences != null)
+                sharedPreferences.edit()
+                        .putString("ip", etIP.getText().toString())
+                        .putString("port", etPort.getText().toString())
+                        .putString("sample_rate", etSampleRate.getText().toString())
+                        .apply();
+
+            // Start server or close if is running
+            if (audioServer == null) {
+                // Open the audio server
+                try {
+                    audioServer = AudioServerFactory.createAudioStreamer(InetAddress.getByName(etIP.getText().toString()), Integer.valueOf(etPort.getText().toString()), Integer.valueOf(etSampleRate.getText().toString()));
+                    audioServer.start();
+                    setupConnectionViews(true);
+                } catch (UnknownHostException e) {
+                    Log.d("GLS", "Failed to open the audio streamer", e);
+                }
+            } else {
+                // Close the audio server
+                audioServer.close();
+                audioServer = null;
+                setupConnectionViews(false);
+            }
+        });
+    }
+
+    /**
+     * Setup the views to match the server state.
+     *
+     * @param connected: if the views should be configured as
+     *                   connected ({@code true}) or
+     *                   disconnected ({@code false}).
+     */
+    private void setupConnectionViews(boolean connected) {
+        etIP.setEnabled(!connected);
+        etPort.setEnabled(!connected);
+        etSampleRate.setEnabled(!connected);
+        btConnect.setText(connected ? getString(R.string.disconnect) : getString(R.string.connect));
+    }
+
+    /**
+     * Checks at runtime for all the permissions required to run the app.
+     */
     private void checkPermissions() {
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 123);
@@ -49,6 +102,9 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * Initialize the views references and setup the initial configuration.
+     */
     private void initViews() {
         btConnect = findViewById(R.id.btConnect);
         etIP = findViewById(R.id.etIP);
@@ -57,58 +113,6 @@ public class MainActivity extends Activity {
         etIP.setText(sharedPreferences.getString("ip", "192.168.0.8"));
         etPort.setText(sharedPreferences.getString("port", "55555"));
         etSampleRate.setText(sharedPreferences.getString("sample_rate", "16000"));
-    }
-
-    private void setupAudioStreamerClient() {
-        streamer = new AudioStreamerClient(Integer.valueOf(etSampleRate.getText().toString()));
-        streamer.setListener(new BaseAsyncTaskListener<Void, Void, Void>() {
-
-            @Override
-            public void onPreExecute() {
-                setupConnectionViews(true);
-            }
-
-            @Override
-            public void onPostExecute(Void o) {
-                setupConnectionViews(false);
-            }
-
-            @Override
-            public void onCancelled() {
-                setupConnectionViews(false);
-            }
-
-        });
-
-        btConnect.setOnClickListener(v -> {
-            if (sharedPreferences != null)
-                sharedPreferences.edit()
-                        .putString("ip", etIP.getText().toString())
-                        .putString("port", etPort.getText().toString())
-                        .putString("sample_rate", etSampleRate.getText().toString())
-                        .apply();
-
-            if (!streamer.isRecording()) {
-                try {
-                    streamer.setSampleRate(Integer.valueOf(etSampleRate.getText().toString()));
-                    streamer.start(InetAddress.getByName(etIP.getText().toString()), Integer.valueOf(etPort.getText().toString()));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            else {
-                streamer.stop();
-                setupConnectionViews(false);
-            }
-        });
-
-    }
-
-    private void setupConnectionViews(boolean connected) {
-        etIP.setEnabled(!connected);
-        etPort.setEnabled(!connected);
-        etSampleRate.setEnabled(!connected);
-        btConnect.setText(connected ? getString(R.string.disconnect) : getString(R.string.connect));
     }
 
 }
