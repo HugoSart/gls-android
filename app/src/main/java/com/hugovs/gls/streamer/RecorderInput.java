@@ -18,6 +18,10 @@ public class RecorderInput implements AudioInput {
 
     private AudioRecord record;
     private int bufferSizeInBytes;
+    private long deviceId;
+
+    // Aux
+    private byte[] deviceIdBytes;
 
     /**
      * Crate an instance of this class.
@@ -28,9 +32,13 @@ public class RecorderInput implements AudioInput {
      * @param audioFormat: the audio format.
      * @param bufferSizeInBytes: the buffer size to store the samples.
      */
-    public RecorderInput(int audioSource, int sampleRateInHz, int channelConfig, int audioFormat, int bufferSizeInBytes) {
+    public RecorderInput(long deviceId, int audioSource, int sampleRateInHz, int channelConfig, int audioFormat, int bufferSizeInBytes) {
+        this.deviceId = deviceId;
         this.bufferSizeInBytes = bufferSizeInBytes;
         this.record = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, bufferSizeInBytes * 10);
+
+        deviceIdBytes = ByteUtils.longToBytes(deviceId);
+        Log.d("GLS", "Id: [" + deviceIdBytes[0] + ", "+ deviceIdBytes[1] + ", "+ deviceIdBytes[2] + ", "+ deviceIdBytes[3] + ", "+ deviceIdBytes[4] + ", "+ deviceIdBytes[5] + ", "+ deviceIdBytes[6] + ", "+ deviceIdBytes[7] + "]");
     }
 
     /**
@@ -60,8 +68,13 @@ public class RecorderInput implements AudioInput {
     public AudioData read() {
         if (record.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
             byte[] b = new byte[bufferSizeInBytes + 16];
-            record.read(b, 16, b.length - 16);
+            record.read(b, 16, bufferSizeInBytes);
 
+            // Copy device's id
+            deviceIdBytes = ByteUtils.longToBytes(deviceId);
+            System.arraycopy(deviceIdBytes, 0, b, 0, 8);
+
+            // Copy timestamp
             long timestamp = Calendar.getInstance().getTimeInMillis();
             byte[] timestampBytes = ByteUtils.longToBytes(timestamp);
             System.arraycopy(timestampBytes, 0, b, 8, 8);

@@ -28,9 +28,10 @@ public class AudioServerFactory {
      * @param sampleRateInHz: the sample rate to process the data.
      * @return the instance of {@link AudioServer} for stream.
      */
-    public static AudioServer createAudioStreamer(InetAddress address, int port, int sampleRateInHz) {
+    public static AudioServer createAudioStreamer(InetAddress address, int port, long deviceId, int sampleRateInHz) {
         AudioServer audioServer = new AudioServer(sampleRateInHz, 16);
         audioServer.setInput(new RecorderInput(
+                deviceId,
                 MediaRecorder.AudioSource.MIC,
                 sampleRateInHz,
                 AudioFormat.CHANNEL_IN_MONO,

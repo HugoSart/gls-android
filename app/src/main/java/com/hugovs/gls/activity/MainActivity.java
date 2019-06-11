@@ -5,14 +5,17 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.hugovs.gls.R;
 import com.hugovs.gls.core.AudioServer;
 import com.hugovs.gls.streamer.AudioServerFactory;
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -25,11 +28,15 @@ public class MainActivity extends Activity {
 
     // Views
     private Button btConnect;
+    private TextView tvIdentifierValue;
     private EditText etIP, etPort, etSampleRate;
 
     // References
     private AudioServer audioServer;
     private SharedPreferences sharedPreferences;
+
+    // Aux
+    private long deviceId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +45,9 @@ public class MainActivity extends Activity {
         sharedPreferences = getSharedPreferences("GLS-Android", MODE_PRIVATE);
 
         // Custom code
+        deviceId = new BigInteger(Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID), 16).longValue();
+        Log.d("GLS", "Device's id: " + deviceId);
+
         checkPermissions();
         initViews();
         setupConnectButton();
@@ -60,7 +70,7 @@ public class MainActivity extends Activity {
             if (audioServer == null) {
                 // Open the audio server
                 try {
-                    audioServer = AudioServerFactory.createAudioStreamer(InetAddress.getByName(etIP.getText().toString()), Integer.valueOf(etPort.getText().toString()), Integer.valueOf(etSampleRate.getText().toString()));
+                    audioServer = AudioServerFactory.createAudioStreamer(InetAddress.getByName(etIP.getText().toString()), Integer.valueOf(etPort.getText().toString()), deviceId, Integer.valueOf(etSampleRate.getText().toString()));
                     audioServer.start();
                     setupConnectionViews(true);
                 } catch (UnknownHostException e) {
@@ -106,10 +116,15 @@ public class MainActivity extends Activity {
      * Initialize the views references and setup the initial configuration.
      */
     private void initViews() {
+        // Ref
         btConnect = findViewById(R.id.btConnect);
+        tvIdentifierValue = findViewById(R.id.tvIdentifierValue);
         etIP = findViewById(R.id.etIP);
         etPort = findViewById(R.id.etPort);
         etSampleRate = findViewById(R.id.etSampleRate);
+
+        // Setup
+        tvIdentifierValue.setText(String.valueOf(deviceId));
         etIP.setText(sharedPreferences.getString("ip", "192.168.0.8"));
         etPort.setText(sharedPreferences.getString("port", "55555"));
         etSampleRate.setText(sharedPreferences.getString("sample_rate", "16000"));

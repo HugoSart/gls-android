@@ -49,7 +49,7 @@ public class DataStreamerExtension extends AudioServerExtension implements Audio
     public void onDataReceived(AudioData audioData) {
         try {
             // Log.d("GLS","Sending packet: " + StringUtils.from(audioData.getSamples()));
-            packet.setData(audioData.getSamples());
+            packet.setData(AudioData.unwrap(audioData));
             socket.send(packet);
         } catch (IOException e) {
             Log.e("GLS", "Failed to send packet", e);
